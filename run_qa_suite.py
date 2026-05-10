@@ -12,6 +12,10 @@ from rich.panel import Panel
 from rich.table import Table
 from src.tests.test_accuracy import AccuracyTester
 
+# Fix Windows console encoding
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 console = Console()
 
 class QATestSuite:
@@ -24,7 +28,7 @@ class QATestSuite:
         
     def run_accuracy_tests(self) -> Dict[str, Any]:
         """Run accuracy test suite"""
-        console.print("[bold cyan]📊 Running Accuracy Tests...[/bold cyan]")
+        console.print("[bold cyan][ACCURACY] Running Accuracy Tests...[/bold cyan]")
         
         # Load test cases
         test_cases = [
@@ -86,8 +90,8 @@ class QATestSuite:
             output_dir = Path("data/results")
             output_dir.mkdir(parents=True, exist_ok=True)
             output_file = output_dir / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            with open(output_file, 'w') as f:
-                json.dump(report, f, indent=2)
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
             
             console.print(f"\n[green]✓ Report saved to {output_file}[/green]")
             return report
@@ -117,7 +121,7 @@ def main(tests, format):
     """Run LLM QA Test Suite"""
     
     console.print(Panel.fit(
-        "[bold blue]🤖 LLM QA Lab[/bold blue]\n"
+        "[bold blue]LLM QA Lab[/bold blue]\n"
         "[dim]Professional AI Quality Assurance Suite[/dim]",
         border_style="blue"
     ))
@@ -128,7 +132,7 @@ def main(tests, format):
         console.print("\n[yellow]Starting test execution...[/yellow]\n")
         results = suite.run_all(list(tests) if tests else None)
         
-        console.print("\n[bold green]✅ Test Execution Complete![/bold green]")
+        console.print("\n[bold green]Test Execution Complete![/bold green]")
         suite.generate_report(format=format)
         
         # Print summary
@@ -137,15 +141,15 @@ def main(tests, format):
         
         if total_tests > 0:
             if total_passed == total_tests:
-                console.print("\n[bold green]🎉 All tests passed! 🎉[/bold green]")
+                console.print("\n[bold green][SUCCESS] All tests passed![/bold green]")
             else:
-                console.print(f"\n[bold yellow]⚠️  {total_tests - total_passed}/{total_tests} tests failed[/bold yellow]")
+                console.print(f"\n[bold yellow][WARNING] {total_tests - total_passed}/{total_tests} tests failed[/bold yellow]")
             
     except KeyboardInterrupt:
         console.print("\n[red]Test execution interrupted by user[/red]")
         sys.exit(1)
     except Exception as e:
-        console.print(f"\n[red]❌ Error: {e}[/red]")
+        console.print(f"\n[red]ERROR: {e}[/red]")
         import traceback
         traceback.print_exc()
         sys.exit(1)

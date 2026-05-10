@@ -4,25 +4,23 @@ import urllib.error
 from typing import Optional
 
 class LLMClient:
-    """Multi-provider LLM client"""
+    """Multi-provider LLM client with real Ollama support"""
     
     def __init__(self, provider: Optional[str] = None):
         self.provider = provider or "ollama"
-        self.host = "http://localhost:11434"
+        self.host = "http://127.0.0.1:11434"
         self.model = "gemma3:4b"
+        self.use_mock = False
         
     def generate(self, prompt: str, **kwargs) -> str:
         """Generate response from LLM"""
-        try:
-            # Try real Ollama first
-            if self.provider == "ollama":
-                response = self._call_ollama(prompt)
-                if response and not response.startswith("[ERROR]"):
-                    return response
-            return self._mock_llm(prompt)
-        except Exception as e:
-            print(f"LLM call failed: {e}")
-            return self._mock_llm(prompt)
+        if not self.use_mock and self.provider == "ollama":
+            response = self._call_ollama(prompt)
+            if response and not response.startswith("[ERROR]"):
+                return response
+        
+        # Fallback to mock
+        return self._mock_llm(prompt)
     
     def _call_ollama(self, prompt: str) -> str:
         """Call Ollama API"""
@@ -31,7 +29,10 @@ class LLMClient:
             "model": self.model,
             "prompt": prompt,
             "stream": False,
-            "options": {"temperature": 0.1}
+            "options": {
+                "temperature": 0.1,
+                "top_p": 0.9
+            }
         }
         
         req = urllib.request.Request(
@@ -41,27 +42,32 @@ class LLMClient:
         )
         
         try:
-            with urllib.request.urlopen(req, timeout=5) as response:
+            print(f"[OLLAMA] Calling with model: {self.model}...")
+            with urllib.request.urlopen(req, timeout=30) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 return result.get('response', '')
-        except (urllib.error.URLError, TimeoutError):
-            return ""  # Will trigger mock fallback
+        except urllib.error.URLError as e:
+            print(f"[WARNING] Ollama not reachable: {e}")
+            print("   Make sure Ollama is running: 'ollama serve'")
+            self.use_mock = True
+            return ""
+        except Exception as e:
+            print(f"[WARNING] Ollama error: {e}")
+            return ""
     
     def _mock_llm(self, prompt: str) -> str:
-        """Improved mock LLM that matches expected answers"""
+        """Mock LLM for testing without real API"""
+        print("[MOCK] Using mock LLM (install Ollama for real responses)")
         
-        # Exact match for our test cases
+        # Smart mock responses
         if "machine learning" in prompt.lower():
             return "Machine learning enables systems to learn from data."
         elif "what is rag" in prompt.lower() or "rag?" in prompt.lower():
             return "RAG is Retrieval-Augmented Generation for enhanced LLM responses."
         elif "python" in prompt.lower():
             return "Python is a high-level programming language."
-        elif "artificial intelligence" in prompt.lower():
-            return "Artificial intelligence is the simulation of human intelligence in machines."
         else:
-            # For other prompts, generate a reasonable response
-            return f"This is a response to: {prompt[:100]}..."
+            return f"[Mock] Response to: {prompt[:100]}..."
 
 # Global client instance
 llm_client = LLMClient()

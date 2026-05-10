@@ -1,4 +1,4 @@
-﻿"""Enhanced accuracy testing module"""
+﻿"""accuracy testing module"""
 
 from typing import Dict, List, Any
 from dataclasses import dataclass, asdict
@@ -29,7 +29,7 @@ class AccuracyTester:
     """Test LLM accuracy against golden dataset"""
     
     def __init__(self):
-        self.threshold = 0.6  # Lower threshold for mock tests
+        self.threshold = 0.6
         self.results = []
         
     def exact_match_scoring(self, expected: str, actual: str) -> float:
@@ -57,13 +57,12 @@ class AccuracyTester:
         if not expected_keywords:
             return 0.0
             
-        # Check for key concepts
         common = expected_keywords.intersection(actual_keywords)
         return len(common) / len(expected_keywords)
     
     def run_test(self, question: str, expected_answer: str) -> TestResult:
         """Run single accuracy test"""
-        print(f"Testing: {question[:50]}...")
+        print(f"[TEST] {question[:50]}...")
         
         # Get LLM response
         actual_answer = llm_client.generate(question)
@@ -93,7 +92,7 @@ class AccuracyTester:
     
     def run_suite(self, test_cases: List[Dict[str, str]]) -> Dict[str, Any]:
         """Run full test suite"""
-        print(f"\n📋 Running accuracy test suite with {len(test_cases)} cases")
+        print(f"\n[SUITE] Running accuracy test suite with {len(test_cases)} cases")
         print("=" * 60)
         
         self.results = []
@@ -102,8 +101,8 @@ class AccuracyTester:
             result = self.run_test(test["question"], test["expected"])
             self.results.append(result)
             
-            # Print individual result with color
-            status = "✅ PASS" if result.passed else "❌ FAIL"
+            # Print individual result
+            status = "PASS" if result.passed else "FAIL"
             print(f"{status} | Score: {result.score:.1%} | {result.test_name[:50]}...")
             if not result.passed:
                 print(f"      Expected: {result.expected[:60]}...")
@@ -116,14 +115,14 @@ class AccuracyTester:
         passed = sum(1 for r in self.results if r.passed)
         avg_score = sum(r.score for r in self.results) / total if total > 0 else 0
         
-        print(f"\n📊 Summary: {passed}/{total} passed | Average Score: {avg_score:.1%}")
+        print(f"\n[SUMMARY] {passed}/{total} passed | Average Score: {avg_score:.1%}")
         
         if passed == total:
-            print("🎉 Excellent! All tests passed!")
+            print("[SUCCESS] Excellent! All tests passed!")
         elif avg_score >= 0.7:
-            print("👍 Good results! Minor improvements needed.")
+            print("[OK] Good results! Minor improvements needed.")
         else:
-            print("⚠️  Some tests need work. Review the responses above.")
+            print("[WARNING] Some tests need work. Review the responses above.")
         
         # Convert results to dictionaries for JSON serialization
         serializable_results = [r.to_dict() for r in self.results]

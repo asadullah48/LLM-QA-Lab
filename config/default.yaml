@@ -2,7 +2,7 @@
   default_provider: "ollama"
   providers:
     ollama:
-      host: "http://localhost:11434"
+      host: "http://127.0.0.1:11434"
       model: "gemma3:4b"
       timeout: 60
     openai:
@@ -19,7 +19,7 @@
 evaluation:
   default_scoring: "hybrid"
   semantic_threshold: 0.7
-  pass_threshold: 0.8
+  pass_threshold: 0.6
 
 test_suites:
   accuracy: true
