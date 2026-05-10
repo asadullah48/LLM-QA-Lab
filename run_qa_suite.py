@@ -131,8 +131,8 @@ def main(tests, format, config):
     """Run LLM QA Test Suite"""
     
     console.print(Panel.fit(
-        "[bold blue]🤖 LLM QA Lab Enhanced[/bold blue]\n"
-        "[dim]Production-ready AI Quality Assurance Suite[/dim]",
+        "[bold blue]🤖 LLM QA Lab[/bold blue]\n"
+        "[dim]Professional AI Quality Assurance Suite[/dim]",
         border_style="blue"
     ))
     
@@ -167,3 +167,4 @@ def main(tests, format, config):
 
 if __name__ == "__main__":
     main()
+
