@@ -1,0 +1,49 @@
+﻿[project]
+name = "llm-qa-lab"
+version = "1.0.0"
+description = "emphasizes experimentation and testing"
+authors = [{name = "Asadullah Shafique", email = "asadullahshafique@hotmail.com"}]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.5.0",
+    "httpx>=0.27.0",
+    "sqlalchemy>=2.0.0",
+    "aiofiles>=24.1.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.0",
+    "pandas>=2.2.0",
+    "openpyxl>=3.1.0",
+    "jinja2>=3.1.0",
+    "click>=8.1.0",
+    "rich>=13.7.0",
+    "tqdm>=4.66.0",
+    "pytest>=8.3.0",
+    "pytest-cov>=5.0.0",
+    "black>=24.0.0",
+    "ruff>=0.6.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.50.0"]
+anthropic = ["anthropic>=0.34.0"]
+groq = ["groq>=0.11.0"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I", "N", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+addopts = "--cov=src --cov-report=html --cov-report=term"
