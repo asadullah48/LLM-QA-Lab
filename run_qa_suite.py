@@ -1,19 +1,15 @@
 ﻿#!/usr/bin/env python3
-"""Master QA Test Runner with Features"""
+"""Master QA Test Runner"""
 
 import sys
 import json
-import time
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any
 import click
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.panel import Panel
 from rich.table import Table
-from src.utils.logger import logger
-from src.utils.config_loader import config
 from src.tests.test_accuracy import AccuracyTester
 
 console = Console()
@@ -25,18 +21,19 @@ class QATestSuite:
         self.start_time = None
         self.end_time = None
         self.results = {}
-        self.config = config
         
     def run_accuracy_tests(self) -> Dict[str, Any]:
         """Run accuracy test suite"""
         console.print("[bold cyan]📊 Running Accuracy Tests...[/bold cyan]")
         
-        # Load test cases from config or data file
+        # Load test cases
         test_cases = [
             {"question": "What is machine learning?", 
              "expected": "Machine learning enables systems to learn from data."},
             {"question": "What is RAG?", 
-             "expected": "RAG is Retrieval-Augmented Generation for enhanced LLM responses."}
+             "expected": "RAG is Retrieval-Augmented Generation for enhanced LLM responses."},
+            {"question": "What is Python?",
+             "expected": "Python is a high-level programming language."}
         ]
         
         tester = AccuracyTester()
@@ -48,38 +45,27 @@ class QATestSuite:
         
         available_tests = {
             "accuracy": self.run_accuracy_tests,
-            "robustness": None,  # To be implemented
-            "bias": None,        # To be implemented
-            "rag": None,         # To be implemented
-            "consistency": None  # To be implemented
         }
         
         # Filter tests
         if tests:
-            to_run = {k: v for k, v in available_tests.items() if k in tests and v}
+            to_run = {k: v for k, v in available_tests.items() if k in tests}
         else:
-            to_run = {k: v for k, v in available_tests.items() if v}
+            to_run = available_tests
         
-        self.start_time = time.time()
+        self.start_time = datetime.now()
         
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console
-        ) as progress:
-            for test_name, test_func in to_run.items():
-                task = progress.add_task(f"Running {test_name} tests...", total=None)
-                self.results[test_name] = test_func()
-                progress.update(task, completed=True)
+        for test_name, test_func in to_run.items():
+            console.print(f"\n[bold]Running {test_name} tests...[/bold]")
+            self.results[test_name] = test_func()
         
-        self.end_time = time.time()
+        self.end_time = datetime.now()
         return self.results
     
-    def generate_report(self, format: str = "json") -> str:
+    def generate_report(self, format: str = "json"):
         """Generate test report"""
-        duration = self.end_time - self.start_time
+        duration = (self.end_time - self.start_time).total_seconds() if self.end_time else 0
         
-        # Calculate overall metrics
         total_tests = sum(r.get("total_tests", 0) for r in self.results.values())
         total_passed = sum(r.get("passed", 0) for r in self.results.values())
         
@@ -97,12 +83,14 @@ class QATestSuite:
             }
             
             # Save to file
-            output_file = f"data/results/report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            Path("data/results").mkdir(parents=True, exist_ok=True)
+            output_dir = Path("data/results")
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_file = output_dir / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             with open(output_file, 'w') as f:
                 json.dump(report, f, indent=2)
             
             console.print(f"\n[green]✓ Report saved to {output_file}[/green]")
+            return report
             
         elif format == "table":
             table = Table(title="QA Test Suite Results")
@@ -118,16 +106,14 @@ class QATestSuite:
                 )
             
             console.print(table)
-            
-        return report
+            return None
 
 @click.command()
 @click.option('--tests', '-t', multiple=True, 
-              help='Specific tests to run (accuracy, robustness, bias, rag, consistency)')
+              help='Specific tests to run (accuracy)')
 @click.option('--format', '-f', default='table', 
               help='Output format (table, json)')
-@click.option('--config', '-c', help='Custom config file path')
-def main(tests, format, config):
+def main(tests, format):
     """Run LLM QA Test Suite"""
     
     console.print(Panel.fit(
@@ -136,14 +122,11 @@ def main(tests, format, config):
         border_style="blue"
     ))
     
-    if config:
-        console.print(f"Using config: {config}")
-    
     suite = QATestSuite()
     
     try:
         console.print("\n[yellow]Starting test execution...[/yellow]\n")
-        results = suite.run_all(tests if tests else None)
+        results = suite.run_all(list(tests) if tests else None)
         
         console.print("\n[bold green]✅ Test Execution Complete![/bold green]")
         suite.generate_report(format=format)
@@ -152,19 +135,20 @@ def main(tests, format, config):
         total_tests = sum(r.get("total_tests", 0) for r in results.values())
         total_passed = sum(r.get("passed", 0) for r in results.values())
         
-        if total_passed == total_tests:
-            console.print("\n[bold green]🎉 All tests passed! 🎉[/bold green]")
-        else:
-            console.print(f"\n[bold yellow]⚠️  {total_tests - total_passed} tests failed[/bold yellow]")
+        if total_tests > 0:
+            if total_passed == total_tests:
+                console.print("\n[bold green]🎉 All tests passed! 🎉[/bold green]")
+            else:
+                console.print(f"\n[bold yellow]⚠️  {total_tests - total_passed}/{total_tests} tests failed[/bold yellow]")
             
     except KeyboardInterrupt:
         console.print("\n[red]Test execution interrupted by user[/red]")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Test execution failed: {e}")
         console.print(f"\n[red]❌ Error: {e}[/red]")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
     main()
-

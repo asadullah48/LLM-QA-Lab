@@ -1,5 +1,4 @@
-﻿# LLM QA Lab Configuration
-llm:
+﻿llm:
   default_provider: "ollama"
   providers:
     ollama:
@@ -18,10 +17,10 @@ llm:
       temperature: 0.1
 
 evaluation:
-  default_scoring: "hybrid"  # exact, partial, semantic, hybrid
+  default_scoring: "hybrid"
   semantic_threshold: 0.7
   pass_threshold: 0.8
-  
+
 test_suites:
   accuracy: true
   robustness: true

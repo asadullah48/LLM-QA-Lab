@@ -27,8 +27,12 @@ class ConfigLoader:
     def _load_yaml(self) -> Dict[str, Any]:
         """Load YAML configuration"""
         if self.config_path.exists():
-            with open(self.config_path, 'r') as f:
-                return yaml.safe_load(f)
+            try:
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    return yaml.safe_load(f) or {}
+            except yaml.YAMLError as e:
+                print(f"Error loading config: {e}")
+                return {}
         return {}
     
     def get(self, key: str, default=None):
